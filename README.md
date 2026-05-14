@@ -1,205 +1,125 @@
-# project-de-transportation-goodcabs
-End-to-end Data Engineering pipeline on Databricks — Bronze, Silver, Gold layers
+🚖 Good Cabs — End-to-End Data Engineering Project
+Built with Databricks LakeFlow Spark Declarative Pipelines (SDP)
+________________________________________
+📌 Project Overview
+Good Cabs is a rapidly growing cab service company facing critical data challenges at scale. Regional managers were receiving delayed, generic insights, and the existing procedural Spark pipelines were rigid, tightly coupled, and slow to adapt to business needs.
+This project demonstrates a proof-of-concept migration to LakeFlow Spark Declarative Pipelines on Databricks — resulting in faster pipelines, reduced code complexity, and BI-ready regional dashboards.
+________________________________________
+🧩 Problem Statement
+Pain Point	Description
+Delayed Insights	Regional managers not receiving data on time
+Inefficient Dashboards	Generic dashboards forcing manual data rework
+Outdated Architecture	Procedural Spark pipelines with manual orchestration
+________________________________________
+🏗️ Technical Architecture
+Amazon S3 (CSV files)
+        ↓
+  [ Bronze Layer ]   ← Raw ingestion with metadata columns
+        ↓
+  [ Silver Layer ]   ← Cleaned, transformed, validated data
+        ↓
+  [ Gold Layer ]     ← BI-ready, city-specific views
+Tech Stack:
+•	Databricks (Free Edition)
+•	LakeFlow Spark Declarative Pipelines (SDP)
+•	Amazon S3
+•	Unity Catalog (governance & RBAC)
+•	Auto Loader (incremental ingestion)
+________________________________________
+📂 Project Structure
+/bronze
+  ├── city_bronze.py         # Raw city data ingestion
+  └── trips_bronze.py        # Raw trips data ingestion
 
-# 🚕 GoodCabs — Transportation Data Engineering Pipeline
+/silver
+  ├── city_silver.py         # City data cleaning & transformation
+  ├── calendar_silver.py     # Calendar dimension table
+  └── trips_silver.py        # Trips data with data quality checks
 
-> End-to-end data engineering project built on **Databricks** using a **Medallion Architecture** (Bronze → Silver → Gold) to process and analyze cab trip data across Indian cities.
+/gold
+  └── gold_views.py          # City-specific BI-ready views
 
----
+/data
+  └── schema/                # Sample schema definitions
 
-## 📐 Architecture Overview
+README.md
+________________________________________
+🔄 Pipeline Layers
+🥉 Bronze Layer
+•	Ingests raw CSV data from S3 using Auto Loader
+•	Adds metadata columns (_ingestion_time, _source_file)
+•	Uses permissive mode to handle corrupt records without pipeline failure
+•	Bad records captured in _corrupt_record column
+🥈 Silver Layer
+•	Applies transformation and cleaning logic
+•	Uses Expectation Annotations for data quality (e.g., valid driver rating ranges)
+•	Handles unexpected schema changes via rescue columns
+•	Code reduction achieved: 135 lines → 50 lines vs. traditional approach
+🥇 Gold Layer
+•	Generates city-specific views for regional managers
+•	Enables role-based access via Unity Catalog (RBAC)
+•	Delivers BI-ready data without manual export or rework
+________________________________________
+⚙️ Key Features Implemented
+•	Declarative vs Imperative: Shifted from manual orchestration to SDP's automatic dependency management
+•	Incremental Load: Continuous pipeline mode processes only new data dropped in S3
+•	Data Quality: expect annotations flag bad records without stopping pipelines
+•	Dry Run Validation: Pre-execution validation catches logical and syntax errors early
+•	Access Management: Unity Catalog restricts regional managers to their city-specific data only
+________________________________________
+📊 Outcomes & Results
+Metric	Result
+Code Reduction	135 lines → 50 lines (Silver layer)
+Pipeline Stability	Incremental updates with no full dataset reprocessing
+Data Delivery	Timely, region-specific insights for managers
+Stakeholder Approval	Proof-of-concept accepted for roadmap inclusion
+________________________________________
+🚀 How to Run
+1.	Sign up for Databricks Free Edition
+2.	Create a Unity Catalog with the required schemas (bronze, silver, gold)
+3.	Connect your S3 bucket to Databricks
+4.	Import notebooks from this repo into Databricks
+5.	Create a new Lakeflow Declarative Pipeline and add the notebooks
+6.	Run the pipeline — dependencies are managed automatically!
+________________________________________
+📚 Resources
+•	Codebasics Course Resources
+•	Databricks Free Edition Signup
+________________________________________
+🙋 About
+Built as a hands-on learning project by following the Databricks LakeFlow Spark Declarative Pipelines micro-course by Codebasics.
+Domain: Transportation / Cab Services
+All code and documentation written independently while working through the tutorial.
 
-```
-Trips (App) ──► Application Server ──► Relational DB
-                                              │
-                                    Data Fetch Service (Simulated via S3 upload)
-                                              │
-                                              ▼
-                                    ┌─────────────────────────────────────┐
-                                    │         Databricks Workspace         │
-                                    │                                     │
-                                    │   Bronze ──► Silver ──► Gold        │
-                                    │                                     │
-                                    │   Unity Catalog  |  Lakeflow DLT    │
-                                    │   Lakehouse      |  Genie / Dashboards │
-                                    └─────────────────────────────────────┘
-```
 
-Raw trip data is ingested from **S3** into the Databricks Lakehouse, processed through three quality layers, and surfaced as city-level analytics dashboards.
+LinkedIn post:
 
----
+🚖 Just built an end-to-end Data Engineering project using Databricks LakeFlow Spark Declarative Pipelines — and it's live on GitHub!
 
-## 📁 Project Structure
+Here's the story behind it 👇
 
-```
-project-de-transportation-goodcabs/
-│
-├── 1. data/
-│   ├── city/
-│   │   └── city.csv                    # City master data (city_id, city_name)
-│   └── trips/
-│       ├── Full Load/                  # Initial historical load
-│       └── Incremental Load/           # Delta updates
-│
-├── 2. codes/
-│   ├── project_setup.ipynb             # Catalog & schema setup (Bronze/Silver/Gold)
-│   │
-│   ├── bronze/
-│   │   ├── city.py                     # Ingest city CSV → bronze.city (Materialized View)
-│   │   └── trips.py                    # Stream trips CSV → bronze.trips (Auto Loader)
-│   │
-│   ├── silver/
-│   │   ├── calendar.py                 # Date dimension with Indian holidays
-│   │   ├── city.py                     # Cleaned city dimension → silver.city
-│   │   └── trips.py                    # Validated & CDC trips → silver.trips
-│   │
-│   └── gold/
-│       ├── trips_gold.sql              # Aggregated trips fact table
-│       ├── trips_chandigarh.sql
-│       ├── trips_coimbatore.sql
-│       ├── trips_indore.sql
-│       ├── trips_jaipur.sql
-│       ├── trips_kochi.sql
-│       ├── trips_lucknow.sql
-│       ├── trips_mysore.sql
-│       ├── trips_surat.sql
-│       ├── trips_vadodara.sql
-│       └── trips_visakhapatnam.sql
-│
-└── 3. other_files/
-    └── architecture.png
-```
+Good Cabs, a fast-growing cab company, had a serious problem:
+❌ Regional managers weren't getting data on time
+❌ Dashboards were too generic — teams were manually reworking exports
+❌ Existing Spark pipelines were rigid and hard to maintain
 
----
+The solution? Migrate to LakeFlow Spark Declarative Pipelines (SDP) on Databricks.
 
-## 🏗️ Medallion Architecture
+🏗️ What I built:
+→ Bronze Layer — Raw ingestion from S3 using Auto Loader, with corrupt record handling
+→ Silver Layer — Data cleaning, quality checks via Expectation annotations, schema rescue
+→ Gold Layer — City-specific, BI-ready views with role-based access (Unity Catalog)
 
-### 🟤 Bronze Layer — Raw Ingestion
-| Table | Method | Source |
-|-------|--------|--------|
-| `transportation.bronze.city` | Materialized View (batch CSV read) | `s3://goodcabs/data-store/city` |
-| `transportation.bronze.trips` | Streaming Table (Auto Loader) | `s3://goodcabs/data-store/trips` |
+📉 One highlight: The Silver layer transformation went from 135 lines of imperative code → just 50 lines declaratively. That's the power of SDP.
 
-- Preserves raw data with `_metadata.file_path` and `ingest_datetime`
-- Schema evolution enabled via `cloudFiles.schemaEvolutionMode = rescue`
-- Change Data Feed enabled on all tables
+⚡ Other wins:
+✅ Incremental load — only new S3 data is processed, no full reruns
+✅ Dry run validation catches errors before they hit production
+✅ RBAC via Unity Catalog — each regional manager sees only their city's data
+✅ Automatic dependency management — no manual orchestration needed
 
----
+🛠️ Tech Stack: Databricks | LakeFlow SDP | Amazon S3 | Unity Catalog | Auto Loader | PySpark
 
-### ⚪ Silver Layer — Cleaned & Validated
-| Table | Type | Key Transformations |
-|-------|------|-------------------|
-| `transportation.silver.city` | Materialized View | Column standardization, timestamp tracking |
-| `transportation.silver.trips` | Streaming Table (CDC/SCD1) | Type casting, column renaming, data quality checks |
-| `transportation.silver.calendar` | Materialized View | Full date dimension with Indian public holidays |
+Full project + README on GitHub 👉 [your GitHub link here]
 
-**Data Quality Expectations on `trips`:**
-- `valid_date` — `year(business_date) >= 2020`
-- `valid_driver_rating` — `driver_rating BETWEEN 1 AND 10`
-- `valid_passenger_rating` — `passenger_rating BETWEEN 1 AND 10`
-
----
-
-### 🥇 Gold Layer — Analytics-Ready
-City-level aggregated trip metrics for 10 Indian cities:
-
-| Cities Covered |
-|---|
-| Jaipur · Lucknow · Surat · Kochi · Chandigarh · Coimbatore · Indore · Mysore · Vadodara · Visakhapatnam |
-
----
-
-## 🛠️ Tech Stack
-
-| Tool | Purpose |
-|------|---------|
-| **Databricks** | Cloud data platform & pipeline orchestration |
-| **Apache Spark / PySpark** | Distributed data processing |
-| **Lakeflow Declarative Pipelines** | Pipeline definition (DLT) |
-| **Unity Catalog** | Data governance & access control |
-| **Delta Lake** | ACID-compliant table storage |
-| **Auto Loader** | Incremental S3 file ingestion |
-| **AWS S3** | Cloud object storage for raw data |
-| **SQL** | Gold layer analytics queries |
-| **Python** | Bronze & Silver transformation logic |
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Databricks workspace with Unity Catalog enabled
-- AWS S3 bucket: `s3://goodcabs/`
-- Databricks cluster with access to the S3 bucket
-
-### Step 1 — Catalog & Schema Setup
-Run `project_setup.ipynb` in Databricks:
-```python
-# Creates the transportation catalog with 3 schemas
-spark.sql("CREATE CATALOG IF NOT EXISTS transportation")
-spark.sql("CREATE SCHEMA IF NOT EXISTS transportation.bronze")
-spark.sql("CREATE SCHEMA IF NOT EXISTS transportation.silver")
-spark.sql("CREATE SCHEMA IF NOT EXISTS transportation.gold")
-```
-
-### Step 2 — Upload Data to S3
-```
-s3://goodcabs/data-store/city/     ← Upload city.csv
-s3://goodcabs/data-store/trips/    ← Upload trips CSVs (Full Load first, then Incremental)
-```
-
-### Step 3 — Deploy Lakeflow Pipelines
-Upload the pipeline files to Databricks and run in order:
-
-```
-1. bronze/city.py       → transportation.bronze.city
-2. bronze/trips.py      → transportation.bronze.trips
-3. silver/calendar.py   → transportation.silver.calendar
-4. silver/city.py       → transportation.silver.city
-5. silver/trips.py      → transportation.silver.trips
-6. gold/*.sql           → transportation.gold.*
-```
-
----
-
-## 📊 Data Schema
-
-### City (`city.csv`)
-| Column | Type | Description |
-|--------|------|-------------|
-| `city_id` | String | Unique city code (e.g., `RJ01`) |
-| `city_name` | String | City name (e.g., `Jaipur`) |
-
-### Trips (Silver)
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | String | Unique trip ID |
-| `business_date` | Date | Trip date |
-| `city_id` | String | City reference |
-| `passenger_category` | String | `new` or `repeated` |
-| `distance_kms` | Double | Distance travelled |
-| `sales_amt` | Double | Fare amount |
-| `passenger_rating` | Double | Rating 1–10 |
-| `driver_rating` | Double | Rating 1–10 |
-
----
-
-## 🔑 Key Design Decisions
-
-- **Auto Loader** for trips streaming ensures exactly-once ingestion and handles schema evolution automatically
-- **SCD Type 1** CDC upsert on `silver.trips` using `trip_id` as the key
-- **Change Data Feed** enabled across all layers for downstream change tracking
-- **Materialized Views** used for static dimensions (city, calendar) to avoid redundant recomputation
-- City-level **Gold tables** allow targeted partitioned queries per city for dashboard performance
-
----
-
-## 👤 Author
-
-**Nikitha K** — Data Analyst | Analytics Engineer  
-📧 nikithak207@gmail.com  
----
-
-## 📄 License
-
-This project is for portfolio and educational purposes.
+#DataEngineering #Databricks #LakeFlow #SparkDeclarativePipelines #ApacheSpark #DataPipeline #OpenToWork #DataEngineer
